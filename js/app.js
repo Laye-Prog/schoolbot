@@ -1,217 +1,327 @@
-/* =================================================================
-   MODULE 1 : JAVASCRIPT DE BASE
-   Fichier: js/app.js
-   
-   Ce fichier contient la logique de base de notre chatbot.
-   Pour l'instant, nous allons juste gérer l'envoi de messages.
-   ================================================================= */
+/* ==========================================
+   🤖 CHATBOT ÉTUDIANT - SCRIPT PRINCIPAL
+   Module 2 : Interface Avancée et Animations
+   ========================================== */
 
 // ============================================
-// 1. ATTENDRE QUE LA PAGE SOIT CHARGÉE
+// VARIABLES GLOBALES
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Application chargée avec succès !');
-    
-    // Initialisation de l'application
-    initializeApp();
-});
+let currentMode = 'naturel';
+const chatContainer = document.getElementById('chat-container');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
 
 // ============================================
-// 2. FONCTION D'INITIALISATION
+// INITIALISATION DE L'APPLICATION
 // ============================================
 function initializeApp() {
-    console.log('🚀 Initialisation du chatbot...');
+    console.log('🚀 Initialisation du ChatBot...');
     
-    // Sélection des éléments du DOM
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const chatContainer = document.getElementById('chat-container');
+    // ============================================
+    // GESTION DU THÈME CLAIR/SOMBRE
+    // ============================================
+    const themeToggle = document.getElementById('theme-toggle');
+    
+    // Charger le thème sauvegardé
+    const savedTheme = localStorage.getItem('chatbot-theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+    }
+    
+    // Événement de clic sur le bouton
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('light-theme');
+            
+            // Sauvegarder la préférence
+            const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+            localStorage.setItem('chatbot-theme', currentTheme);
+            
+            console.log(`🎨 Thème changé : ${currentTheme}`);
+        });
+    }
+    
+    // ============================================
+    // GESTION DES MODES
+    // ============================================
     const modeButtons = document.querySelectorAll('.mode-btn');
     
-    // Variable pour stocker le mode actuel
-    let currentMode = 'naturel';
-    
-    // ============================================
-    // 3. GESTION DES MODES (Naturel, Roast, Sympathique)
-    // ============================================
     modeButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Retirer la classe 'active' de tous les boutons
+            // Retirer la classe active de tous les boutons
             modeButtons.forEach(btn => btn.classList.remove('active'));
             
-            // Ajouter 'active' au bouton cliqué
+            // Ajouter la classe active au bouton cliqué
             this.classList.add('active');
             
-            // Récupérer le mode sélectionné
-            currentMode = this.getAttribute('data-mode');
+            // Mettre à jour le mode actuel
+            currentMode = this.dataset.mode;
+            console.log(`🎭 Mode changé : ${currentMode}`);
             
-            console.log(`Mode changé : ${currentMode}`);
-            
-            // Afficher un message de confirmation
-            addBotMessage(`Mode ${currentMode} activé ! 😎`);
+            // Message de confirmation
+            addBotMessage(`Mode ${getModeEmoji(currentMode)} ${currentMode} activé ! Essaie de me poser une question maintenant 😊`);
         });
     });
     
     // ============================================
-    // 4. ENVOI DE MESSAGES
+    // GESTION DE L'ENVOI DE MESSAGES
     // ============================================
     
-    // Événement au clic sur le bouton
-    sendBtn.addEventListener('click', function() {
-        sendMessage();
-    });
+    // Envoi par clic sur le bouton
+    sendBtn.addEventListener('click', sendMessage);
     
-    // Événement quand on appuie sur Entrée
+    // Envoi par touche Entrée
     userInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             sendMessage();
         }
     });
     
-    // ============================================
-    // 5. FONCTION POUR ENVOYER UN MESSAGE
-    // ============================================
-    function sendMessage() {
-        const message = userInput.value.trim();
-        
-        // Vérifier que le message n'est pas vide
-        if (message === '') {
-            console.log('⚠️ Message vide, rien à envoyer');
-            return;
-        }
-        
-        console.log(`📤 Envoi du message : "${message}"`);
-        
-        // Afficher le message de l'utilisateur
-        addUserMessage(message);
-        
-        // Effacer le champ de saisie
-        userInput.value = '';
-        
-        // Simuler une réponse du bot (temporaire, Module 1)
-        // Dans les prochains modules, nous utiliserons l'IA
-        setTimeout(() => {
-            const response = generateTemporaryResponse(message, currentMode);
-            addBotMessage(response);
-        }, 1000);
+    console.log('✅ ChatBot initialisé avec succès !');
+}
+
+// ============================================
+// FONCTION D'ENVOI DE MESSAGE
+// ============================================
+function sendMessage() {
+    const message = userInput.value.trim();
+    
+    // Vérifier que le message n'est pas vide
+    if (message === '') {
+        // Animation de secousse pour indiquer l'erreur
+        userInput.classList.add('shake');
+        setTimeout(() => userInput.classList.remove('shake'), 500);
+        return;
     }
     
-    // ============================================
-    // 6. FONCTION POUR AJOUTER UN MESSAGE UTILISATEUR
-    // ============================================
-    function addUserMessage(text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message user-message';
-        
-        messageDiv.innerHTML = `
-            <div class="message-avatar">👤</div>
-            <div class="message-content">
-                <p>${escapeHtml(text)}</p>
+    console.log(`📤 Message envoyé : ${message}`);
+    
+    // Animation du bouton d'envoi
+    sendBtn.classList.add('sending');
+    setTimeout(() => sendBtn.classList.remove('sending'), 500);
+    
+    // Ajouter le message de l'utilisateur
+    addUserMessage(message);
+    
+    // Vider l'input
+    userInput.value = '';
+    
+    // Simuler la réflexion du bot
+    showTypingIndicator();
+    
+    // Délai aléatoire entre 1 et 3 secondes
+    const delay = Math.random() * 2000 + 1000;
+    
+    setTimeout(() => {
+        hideTypingIndicator();
+        const response = generateTemporaryResponse(message, currentMode);
+        addBotMessage(response);
+    }, delay);
+}
+
+// ============================================
+// TYPING INDICATOR
+// ============================================
+function showTypingIndicator() {
+    // Vérifier qu'il n'y a pas déjà un indicateur
+    if (document.getElementById('typing-indicator')) {
+        return;
+    }
+    
+    const indicator = document.createElement('div');
+    indicator.className = 'message bot-message typing-indicator';
+    indicator.id = 'typing-indicator';
+    
+    indicator.innerHTML = `
+        <div class="message-avatar">🤖</div>
+        <div class="message-content">
+            <div class="typing-dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
             </div>
-        `;
-        
-        chatContainer.appendChild(messageDiv);
-        scrollToBottom();
-    }
+        </div>
+    `;
     
-    // ============================================
-    // 7. FONCTION POUR AJOUTER UN MESSAGE DU BOT
-    // ============================================
-    function addBotMessage(text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-        
-        messageDiv.innerHTML = `
-            <div class="message-avatar">🤖</div>
-            <div class="message-content">
-                <p>${escapeHtml(text)}</p>
-            </div>
-        `;
-        
-        chatContainer.appendChild(messageDiv);
-        scrollToBottom();
-    }
-    
-    // ============================================
-    // 8. FONCTION TEMPORAIRE POUR GÉNÉRER DES RÉPONSES
-    // (Sera remplacée par l'IA au Module 4)
-    // ============================================
-    function generateTemporaryResponse(userMessage, mode) {
-        // Convertir en minuscules pour faciliter la détection
-        const msg = userMessage.toLowerCase();
-        
-        // Réponses selon le mode
-        const responses = {
-            naturel: [
-                "Hmm, intéressante question ! Pour l'instant je suis en mode apprentissage. 😊",
-                "Je note ça ! Bientôt je pourrai te répondre avec l'IA. 🤖",
-                "Super question ! J'apprends encore comment y répondre. 📚"
-            ],
-            roast: [
-                "Oh là là, cette question... 🔥 Donne-moi le temps de préparer une réponse qui arrache !",
-                "Tu veux vraiment que je roast avec ça ? Attends le Module 4, ça va chauffer ! 😈",
-                "Pas mal comme question, mais j'ai besoin de mon cerveau IA d'abord ! 💀"
-            ],
-            sympathique: [
-                "Quelle belle question ! 💖 Je suis impatient d'y répondre quand j'aurai mon IA !",
-                "Tu es trop gentil(le) de me poser cette question ! 🥰 Bientôt je pourrai t'aider !",
-                "Aww, j'aimerais tellement pouvoir répondre ! 💕 Patience, ça arrive !"
-            ]
-        };
-        
-        // Détection de mots-clés
-        if (msg.includes('salut') || msg.includes('bonjour') || msg.includes('hello')) {
-            return mode === 'roast' 
-                ? "Salut toi ! Prêt(e) à te faire roast ? 🔥" 
-                : mode === 'sympathique'
-                ? "Coucou ! 💖 Quel plaisir de te parler !"
-                : "Salut ! Comment puis-je t'aider ? 😊";
-        }
-        
-        if (msg.includes('merci') || msg.includes('thanks')) {
-            return mode === 'roast'
-                ? "Ouais ouais, de rien... 😏"
-                : mode === 'sympathique'
-                ? "Avec grand plaisir ! Tu es adorable ! 🥰"
-                : "De rien, ravi d'aider ! 😊";
-        }
-        
-        if (msg.includes('qui es-tu') || msg.includes('qui es tu')) {
-            return `Je suis un chatbot en mode ${mode} ! 🤖 En cours de développement dans le Module 1.`;
-        }
-        
-        // Réponse par défaut selon le mode
-        const modeResponses = responses[mode] || responses.naturel;
-        const randomIndex = Math.floor(Math.random() * modeResponses.length);
-        return modeResponses[randomIndex];
-    }
-    
-    // ============================================
-    // 9. FONCTIONS UTILITAIRES
-    // ============================================
-    
-    // Faire défiler vers le bas pour voir le dernier message
-    function scrollToBottom() {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-    
-    // Échapper le HTML pour éviter les injections XSS
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    chatContainer.appendChild(indicator);
+    scrollToBottom();
+}
+
+function hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        console.log('Hiding indicator...');
+        indicator.remove();
     }
 }
 
 // ============================================
-// 10. MESSAGES DE DEBUG DANS LA CONSOLE
+// AJOUT DE MESSAGES
 // ============================================
-console.log(`
-╔═══════════════════════════════════════╗
-║   🤖 CHATBOT ÉTUDIANT - MODULE 1     ║
-║   Développé pour apprendre Git,      ║
-║   HTML, CSS et JavaScript !          ║
-╚═══════════════════════════════════════╝
-`);
+function addUserMessage(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user-message';
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar">👤</div>
+        <div class="message-content">
+            <p>${escapeHTML(message)}</p>
+        </div>
+    `;
+    
+    chatContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
 
-console.log('💡 Astuce : Ouvre la console (F12) pour voir les logs de débogage !');
+function addBotMessage(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot-message';
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar">🤖</div>
+        <div class="message-content">
+            ${message}
+        </div>
+    `;
+    
+    chatContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+// ============================================
+// GÉNÉRATION DE RÉPONSES TEMPORAIRES
+// (Sera remplacée au Module 3 par la vraie base de données)
+// ============================================
+function generateTemporaryResponse(message, mode) {
+    const messageLower = message.toLowerCase();
+    
+    // Réponses selon le mode
+    const responses = {
+        naturel: [
+            "Intéressant ! Pour le moment, je n'ai pas encore accès à la base de données des étudiants. Mais bientôt, je pourrai te répondre avec des infos réelles !",
+            "Bonne question ! Dès le Module 3, je pourrai te donner de vraies informations sur les étudiants. Patience ! 😊",
+            "J'ai bien reçu ta question, mais je suis encore en construction. Module 3 = accès aux données ! 🚧"
+        ],
+        roast: [
+            "Oh là là, tu me poses une question alors que je n'ai même pas encore de cerveau ? 😂 Attends le Module 3, là je pourrai vraiment t'allumer !",
+            "Tu essaies de me faire parler mais je suis vide comme un frigo d'étudiant en fin de mois ! 🔥 Reviens au Module 3 !",
+            "Sérieux ? Tu veux des infos maintenant ? J'ai même pas encore de base de données, champion ! 😎"
+        ],
+        sympathique: [
+            "Aw, merci pour ta question ! 💖 Je suis encore en construction mais j'ai hâte de pouvoir t'aider au Module 3 !",
+            "Tu es adorable de me poser cette question ! 🥰 Bientôt, je pourrai te donner de vraies réponses avec le Module 3 !",
+            "Ça me touche que tu t'intéresses ! 💕 Encore un peu de patience et je serai opérationnel au Module 3 !"
+        ],
+        philosophique: [
+            "La connaissance est un voyage, et je ne suis qu'au début du mien... 🧘 Au Module 3, je pourrai partager ma sagesse avec toi.",
+            "Qu'est-ce que connaître quelqu'un, vraiment ? Pour l'instant, je médite sur cette question. Retrouve-moi au Module 3. ✨",
+            "Dans l'univers infini de l'information, je suis encore une étoile naissante. Module 3, je brillerai. 🌟"
+        ]
+    };
+    
+    // Détection de mots-clés
+    if (messageLower.includes('bonjour') || messageLower.includes('salut') || messageLower.includes('hey')) {
+        return getModeEmoji(mode) + ' ' + getGreeting(mode);
+    }
+    
+    if (messageLower.includes('merci')) {
+        return getModeEmoji(mode) + ' ' + getThanksResponse(mode);
+    }
+    
+    // Réponse par défaut selon le mode
+    const modeResponses = responses[mode] || responses.naturel;
+    const randomResponse = modeResponses[Math.floor(Math.random() * modeResponses.length)];
+    
+    return `<p>${getModeEmoji(mode)} ${randomResponse}</p>`;
+}
+
+// ============================================
+// FONCTIONS UTILITAIRES
+// ============================================
+function getModeEmoji(mode) {
+    const emojis = {
+        naturel: '😊',
+        roast: '🔥',
+        sympathique: '💖',
+        philosophique: '🧘'
+    };
+    return emojis[mode] || '😊';
+}
+
+function getGreeting(mode) {
+    const greetings = {
+        naturel: 'Salut ! Comment puis-je t\'aider ?',
+        roast: 'Tiens, quelqu\'un qui veut se faire rôtir ! Prêt pour le feu ? 🔥',
+        sympathique: 'Coucou ! Je suis tellement content de te voir ! 💖',
+        philosophique: 'Bonjour, voyageur de la connaissance. Que cherches-tu aujourd\'hui ? 🧘'
+    };
+    return greetings[mode] || greetings.naturel;
+}
+
+function getThanksResponse(mode) {
+    const thanks = {
+        naturel: 'De rien, c\'est avec plaisir ! 😊',
+        roast: 'Ouais ouais, garde tes mercis, je fais juste mon job ! 😎',
+        sympathique: 'Oh mais c\'est moi qui te remercie d\'être là ! 💕',
+        philosophique: 'La gratitude est le chemin vers l\'harmonie intérieure. 🙏'
+    };
+    return thanks[mode] || thanks.naturel;
+}
+
+function escapeHTML(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function scrollToBottom() {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// ============================================
+// ANIMATION SHAKE POUR L'INPUT (optionnel)
+// ============================================
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .shake {
+        animation: shake 0.5s;
+    }
+`;
+document.head.appendChild(style);
+
+// ============================================
+// EASTER EGG : Konami Code (optionnel)
+// ============================================
+let konamiCode = [];
+const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+document.addEventListener('keydown', function(e) {
+    konamiCode.push(e.key);
+    konamiCode = konamiCode.slice(-10);
+    
+    if (konamiCode.join(',') === konamiSequence.join(',')) {
+        addBotMessage(`
+            <p>🎮 KONAMI CODE ACTIVÉ ! 🎮</p>
+            <p>Félicitations, tu as trouvé l'Easter Egg ! Tu es un vrai gamer ! 🏆</p>
+            <p>Tu gagnes... absolument rien ! Mais c'est cool non ? 😄</p>
+        `);
+        konamiCode = [];
+    }
+});
+
+// ============================================
+// DÉMARRAGE DE L'APPLICATION
+// ============================================
+// Attendre que le DOM soit chargé
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
+
+console.log('🎉 Module 2 chargé avec succès !');
