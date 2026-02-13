@@ -1,79 +1,76 @@
 /* ==========================================
-   🤖 CHATBOT ÉTUDIANT - SCRIPT PRINCIPAL
-   Module 2 : Interface Avancée et Animations
+   🤖 CHATBOT ÉTUDIANT - MODULE 3 FINAL
+   Base de données simulée + plus drôle
    ========================================== */
 
-// ============================================
-// VARIABLES GLOBALES
-// ============================================
 let currentMode = 'naturel';
 const chatContainer = document.getElementById('chat-container');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
-const themeToggle = document.getElementById('theme-toggle');
 
 // ============================================
-// INITIALISATION DE L'APPLICATION
+// BASE DE DONNÉES SIMULÉE
+// ============================================
+const studentsDB = [
+    { nom: "Jean Dupont", age: 21, filiere: "Informatique de Gestion", funFact: "Parle 3 langues couramment !", funniest: false, photo: "👨‍💻" },
+    { nom: "Marie Martin", age: 22, filiere: "Marketing", funFact: "Elle adore les chats et en a 4 !", funniest: true, photo: "👩‍🎓" },
+    { nom: "Aliou Diop", age: 20, filiere: "Finance", funFact: "Champion de football universitaire 🏆", funniest: false, photo: "⚽" }
+];
+
+// ============================================
+// INITIALISATION
 // ============================================
 function initializeApp() {
-    console.log('🚀 Initialisation du ChatBot...');
+    console.log('🚀 Initialisation du ChatBot Module 3...');
 
-    // --- CHARGER LE THÈME SAUVEGARDÉ ---
+    // --- Thème clair/sombre ---
+    const themeToggle = document.getElementById('theme-toggle');
     const savedTheme = localStorage.getItem('chatbot-theme') || 'dark';
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-theme');
-    }
+    if(savedTheme === 'light') document.body.classList.add('light-theme');
 
-    // --- TOGGLE THÈME ---
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
+    if(themeToggle){
+        themeToggle.addEventListener('click', ()=>{
             document.body.classList.toggle('light-theme');
             const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
             localStorage.setItem('chatbot-theme', currentTheme);
         });
     }
 
-    // --- GESTION DES MODES ---
+    // --- Modes ---
     const modeButtons = document.querySelectorAll('.mode-btn');
-    modeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            modeButtons.forEach(btn => btn.classList.remove('active'));
+    modeButtons.forEach(btn => {
+        btn.addEventListener('click', function(){
+            modeButtons.forEach(b=>b.classList.remove('active'));
             this.classList.add('active');
             currentMode = this.dataset.mode;
             addBotMessage(`Mode ${getModeEmoji(currentMode)} ${currentMode} activé ! Essaie de me poser une question maintenant 😊`);
         });
     });
 
-    // --- ENVOI DE MESSAGE ---
-    if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-    if (userInput) userInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') sendMessage();
-    });
+    // --- Envoi de messages ---
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', e => { if(e.key==='Enter') sendMessage(); });
 
-    console.log('✅ ChatBot initialisé avec succès !');
+    console.log('✅ ChatBot Module 3 initialisé !');
 }
 
 // ============================================
 // ENVOI DE MESSAGE
 // ============================================
-function sendMessage() {
+function sendMessage(){
     const message = userInput.value.trim();
-    if (!message) {
+    if(message===''){
         userInput.classList.add('shake');
-        setTimeout(() => userInput.classList.remove('shake'), 500);
+        setTimeout(()=>userInput.classList.remove('shake'), 500);
         return;
     }
 
-    sendBtn.classList.add('sending');
-    setTimeout(() => sendBtn.classList.remove('sending'), 500);
-
     addUserMessage(message);
     userInput.value = '';
-
     showTypingIndicator();
 
-    const delay = Math.random() * 2000 + 1000;
-    setTimeout(() => {
+    const delay = Math.random()*2000+1000;
+    setTimeout(()=>{
         hideTypingIndicator();
         const response = generateTemporaryResponse(message, currentMode);
         addBotMessage(response);
@@ -83,9 +80,8 @@ function sendMessage() {
 // ============================================
 // TYPING INDICATOR
 // ============================================
-function showTypingIndicator() {
-    if (document.getElementById('typing-indicator')) return;
-
+function showTypingIndicator(){
+    if(document.getElementById('typing-indicator')) return;
     const indicator = document.createElement('div');
     indicator.className = 'message bot-message typing-indicator';
     indicator.id = 'typing-indicator';
@@ -103,151 +99,90 @@ function showTypingIndicator() {
     scrollToBottom();
 }
 
-function hideTypingIndicator() {
-    const indicator = document.getElementById('typing-indicator');
-    if (indicator) indicator.remove();
+function hideTypingIndicator(){
+    const ind = document.getElementById('typing-indicator');
+    if(ind) ind.remove();
 }
 
 // ============================================
-// AJOUT DE MESSAGES
+// AJOUT MESSAGES
 // ============================================
-function addUserMessage(message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message user-message';
-    messageDiv.innerHTML = `
+function addUserMessage(msg){
+    const div = document.createElement('div');
+    div.className = 'message user-message';
+    div.innerHTML = `
         <div class="message-avatar">👤</div>
-        <div class="message-content"><p>${escapeHTML(message)}</p></div>
+        <div class="message-content"><p>${escapeHTML(msg)}</p></div>
     `;
-    chatContainer.appendChild(messageDiv);
+    chatContainer.appendChild(div);
     scrollToBottom();
 }
 
-function addBotMessage(message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message bot-message';
-    messageDiv.innerHTML = `
+function addBotMessage(msg){
+    const div = document.createElement('div');
+    div.className = 'message bot-message';
+    div.innerHTML = `
         <div class="message-avatar">🤖</div>
-        <div class="message-content">${message}</div>
+        <div class="message-content">${msg}</div>
     `;
-    chatContainer.appendChild(messageDiv);
+    chatContainer.appendChild(div);
     scrollToBottom();
 }
 
 // ============================================
-// RÉPONSES TEMPORAIRES
+// RÉPONSES SIMULÉES (Module 3)
 // ============================================
-function generateTemporaryResponse(message, mode) {
-    const messageLower = message.toLowerCase();
+function generateTemporaryResponse(message, mode){
+    const m = message.toLowerCase();
 
-    const responses = {
-        naturel: [
-            "Intéressant ! Je n'ai pas encore accès aux données, mais bientôt !",
-            "Bonne question ! Patience pour le Module 3 😊",
-            "Module 3 = accès aux données 🚧"
-        ],
-        roast: [
-            "Oh là là, tu me poses une question alors que je n'ai même pas encore de cerveau ? 😂",
-            "Vide comme un frigo d'étudiant ! 🔥",
-            "Sérieux ? Champion 😎"
-        ],
-        sympathique: [
-            "Merci pour ta question 💖 Je suis en construction !",
-            "Tu es adorable 🥰 Patience !",
-            "Ça me touche 💕 Encore un peu de patience !"
-        ],
-        philosophique: [
-            "La connaissance est un voyage... 🧘 Module 3 bientôt.",
-            "Qu'est-ce que connaître quelqu'un ? ✨",
-            "Je suis une étoile naissante 🌟 Module 3 je brillerai."
-        ]
+    // --- Qui est le plus drôle ?
+    if(m.includes("qui est le plus drôle") || m.includes("plus drôle")){
+        const funnyStudent = studentsDB.find(s => s.funniest);
+        if(funnyStudent){
+            return `<p>${getModeEmoji(mode)} Le plus drôle est <strong>${funnyStudent.nom}</strong> ! 😂</p>
+                    <p>Fun fact : ${funnyStudent.funFact}</p>`;
+        } else {
+            return `<p>${getModeEmoji(mode)} Je ne sais pas encore qui est le plus drôle ! 🤔</p>`;
+        }
+    }
+
+    // --- Infos par nom ---
+    const found = studentsDB.find(s => m.includes(s.nom.toLowerCase()));
+    if(found){
+        return `<p>${getModeEmoji(mode)} Infos sur <strong>${found.nom}</strong> :</p>
+                <ul>
+                    <li>Âge : ${found.age}</li>
+                    <li>Filière : ${found.filiere}</li>
+                    <li>Fun fact : ${found.funFact}</li>
+                </ul>`;
+    }
+
+    // --- Salutations & Merci ---
+    if(m.includes('bonjour') || m.includes('salut') || m.includes('hey')) return getModeEmoji(mode)+' '+getGreeting(mode);
+    if(m.includes('merci')) return getModeEmoji(mode)+' '+getThanksResponse(mode);
+
+    // --- Réponse par défaut selon le mode ---
+    const defaults = {
+        naturel:["Intéressant ! Je n'ai pas encore toutes les infos sur ce camarade.","Bonne question ! Bientôt je pourrai te donner plus d'infos ! 😊"],
+        roast:["Tu veux vraiment que je parle de lui ? 😂","Je n'ai pas encore son historique, patience ! 🔥"],
+        sympathique:["Je suis ravi de ta curiosité ! 💖","Encore un peu et je pourrai te donner toutes les infos ! 🥰"],
+        philosophique:["Connaître un étudiant, c'est un voyage... 🧘","Je réfléchis encore sur cette personne. Patience ! ✨"]
     };
-
-    if (messageLower.includes('bonjour') || messageLower.includes('salut') || messageLower.includes('hey')) {
-        return getModeEmoji(mode) + ' ' + getGreeting(mode);
-    }
-
-    if (messageLower.includes('merci')) {
-        return getModeEmoji(mode) + ' ' + getThanksResponse(mode);
-    }
-
-    const modeResponses = responses[mode] || responses.naturel;
-    const randomResponse = modeResponses[Math.floor(Math.random() * modeResponses.length)];
-
-    return `<p>${getModeEmoji(mode)} ${randomResponse}</p>`;
+    const arr = defaults[mode] || defaults.naturel;
+    return `<p>${getModeEmoji(mode)} ${arr[Math.floor(Math.random()*arr.length)]}</p>`;
 }
 
 // ============================================
 // UTILITAIRES
 // ============================================
-function getModeEmoji(mode) {
-    const emojis = { naturel: '😊', roast: '🔥', sympathique: '💖', philosophique: '🧘' };
-    return emojis[mode] || '😊';
-}
-
-function getGreeting(mode) {
-    const greetings = {
-        naturel: 'Salut ! Comment puis-je t\'aider ?',
-        roast: 'Tiens, quelqu\'un qui veut se faire rôtir ! 🔥',
-        sympathique: 'Coucou ! Je suis tellement content de te voir ! 💖',
-        philosophique: 'Bonjour, voyageur de la connaissance. 🧘'
-    };
-    return greetings[mode] || greetings.naturel;
-}
-
-function getThanksResponse(mode) {
-    const thanks = {
-        naturel: 'De rien, c\'est avec plaisir ! 😊',
-        roast: 'Garde tes mercis 😎',
-        sympathique: 'Oh mais c\'est moi qui te remercie 💕',
-        philosophique: 'La gratitude est le chemin 🙏'
-    };
-    return thanks[mode] || thanks.naturel;
-}
-
-function escapeHTML(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function scrollToBottom() {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
+function getModeEmoji(mode){ const e={naturel:'😊',roast:'🔥',sympathique:'💖',philosophique:'🧘'}; return e[mode]||'🤖'; }
+function getGreeting(mode){ return "Salut ! Comment puis-je t'aider ?"; }
+function getThanksResponse(mode){ return "Avec plaisir ! 😊"; }
+function escapeHTML(str){ const div=document.createElement('div'); div.textContent=str; return div.innerHTML; }
+function scrollToBottom(){ chatContainer.scrollTop=chatContainer.scrollHeight; }
 
 // ============================================
-// ANIMATION SHAKE
+// DÉMARRAGE
 // ============================================
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes shake {0%,100%{transform:translateX(0);}10%,30%,50%,70%,90%{transform:translateX(-5px);}20%,40%,60%,80%{transform:translateX(5px);}}
-    .shake { animation: shake 0.5s; }
-`;
-document.head.appendChild(style);
-
-// ============================================
-// KONAMI CODE
-// ============================================
-let konamiCode = [];
-const konamiSequence = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-document.addEventListener('keydown', function(e) {
-    konamiCode.push(e.key);
-    konamiCode = konamiCode.slice(-10);
-    if (konamiCode.join(',') === konamiSequence.join(',')) {
-        addBotMessage(`
-            <p>🎮 KONAMI CODE ACTIVÉ ! 🎮</p>
-            <p>Tu gagnes... absolument rien 😄</p>
-        `);
-        konamiCode = [];
-    }
-});
-
-// ============================================
-// INITIALISATION
-// ============================================
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
-
-console.log('🎉 Module 2 chargé avec succès !');
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', initializeApp); }
+else initializeApp();
